@@ -61,8 +61,20 @@ class TCPIPInstrSession(Session):
 
     @staticmethod
     def list_resources() -> List[str]:
-        # TODO: is there a way to get this?
-        return []
+        out = []
+        fmt = (
+            "TCPIP::%(tcp_address)s::INSTR"
+        )
+        bcastaddr = '<broadcast>'
+        pmap = rpc.BroadcastUDPPortMapperClient(bcastaddr)
+        pmap.set_timeout(1)
+        replies = pmap.get_port((100000, 1, rpc.IPPROTO_UDP, 0))
+
+        for _, (host, port) in replies:
+            if port == 111:
+                # this is most likely an LXI instrument as it repsonded with VXI-11
+                out.append(fmt % dict(tcp_address=host))
+        return out
 
     def after_parsing(self) -> None:
         # TODO: board_number not handled
